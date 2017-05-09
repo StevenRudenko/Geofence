@@ -1,4 +1,15 @@
 <resources>
     <string name="app_name">Geofence</string>
+
+    <!-- Defualt -->
+    <string name="add">Add</string>
+    <string name="cancel">Cancel</string>
+
     <string name="title_activity_main">Geofence</string>
+
+    <!-- Add geofence dialog -->
+    <string name="add_geofence_title">Add new Geofence</string>
+    <string name="geofence_radius">Geofence radius</string>
+    <string name="geofence_hotspot_name">Geofence hotspot name</string>
+
 </resources>

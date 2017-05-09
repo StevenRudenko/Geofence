@@ -1,4 +1,4 @@
-package com.github.stevenrudenko.geofence;
+package com.github.stevenrudenko.geofence.core;
 
 import com.github.stevenrudenko.geofence.core.Geofence;
 import com.github.stevenrudenko.geofence.core.GeofenceStorage;

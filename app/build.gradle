@@ -12,6 +12,9 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
         versionName "1.0"
+
+        vectorDrawables.useSupportLibrary = true
+
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
 
@@ -51,7 +54,7 @@ dependencies {
     // Support annotations
     compile dep.supportAnnotations
     // AppCompat v7
-    compile (dep.appcompatV7) {
+    compile(dep.appcompatV7) {
         exclude excl.supportAnnotations
         exclude excl.supportV4
     }
@@ -60,9 +63,14 @@ dependencies {
     // Google fused-location
     compile dep.googleMaps
 
+    // RxAndroid
+    compile dep.rxbinding
+
     // Testing
     testCompile dep.junit
     androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
         exclude group: 'com.android.support', module: 'support-annotations'
     })
+    compile 'com.android.support.constraint:constraint-layout:1.0.2'
+    compile 'com.android.support:design:25.3.1'
 }

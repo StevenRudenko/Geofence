@@ -62,7 +62,9 @@ public class AndroidLocationProvider implements LocationProvider, LocationListen
     @SuppressWarnings("MissingPermission")
     private void requestLocationUpdates() {
         final LocationRequest request = LocationRequest.create()
-                .setPriority(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY);
+                .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)
+                .setFastestInterval(60000L)
+                .setSmallestDisplacement(5.f);
         onLocationChanged(LocationServices.FusedLocationApi.getLastLocation(googleApiClient));
         LocationServices.FusedLocationApi.requestLocationUpdates(
                 googleApiClient, request, this);
