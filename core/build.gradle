@@ -1,0 +1,17 @@
+apply plugin: 'java'
+apply plugin: 'me.tatarka.retrolambda'
+apply plugin: 'kotlin'
+
+sourceCompatibility = "1.8"
+targetCompatibility = "1.8"
+
+dependencies {
+    compile dep.kotlin
+    // Rx
+    compile dep.rxjava
+    // Testing
+    testCompile dep.junit
+    testCompile dep.mockito
+    testCompile dep.mockitoKotlin
+}
+

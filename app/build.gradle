@@ -1,0 +1,68 @@
+apply plugin: 'com.android.application'
+apply plugin: 'me.tatarka.retrolambda'
+apply plugin: 'checkstyle'
+
+android {
+    compileSdkVersion rootProject.ext.compileSdkVersion
+    buildToolsVersion rootProject.ext.buildToolsVersion
+
+    defaultConfig {
+        applicationId "com.github.stevenrudenko.geofence"
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        versionCode 1
+        versionName "1.0"
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+    }
+
+    signingConfigs {
+        debugSigning {
+            storeFile project.file('../config/signing/debug.keystore')
+            storePassword "android"
+            keyAlias "androiddebugkey"
+            keyPassword "android"
+        }
+    }
+
+    buildTypes {
+        debug {
+            buildConfigField "boolean", "DEBUG_LOGS", "true"
+
+            minifyEnabled false
+            signingConfig signingConfigs.debugSigning
+        }
+        release {
+            buildConfigField "boolean", "DEBUG_LOGS", "true"
+
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+}
+
+dependencies {
+    compile project(":core")
+
+    // Support annotations
+    compile dep.supportAnnotations
+    // AppCompat v7
+    compile (dep.appcompatV7) {
+        exclude excl.supportAnnotations
+        exclude excl.supportV4
+    }
+    // Google Maps view
+    compile dep.googleLocation
+    // Google fused-location
+    compile dep.googleMaps
+
+    // Testing
+    testCompile dep.junit
+    androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
+        exclude group: 'com.android.support', module: 'support-annotations'
+    })
+}

@@ -1,0 +1,21 @@
+# Build and generated folders
+/bin
+/gen
+/build
+/captures
+/temp
+/tmp
+.gradle
+.externalNativeBuild
+
+# Local properties
+local.properties
+
+# IDEA
+.idea
+*.iml
+*.ipr
+*.iws
+
+# Other
+.DS_Store
