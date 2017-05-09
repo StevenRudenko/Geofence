@@ -138,6 +138,7 @@ class GeofenceModuleTest {
         locations.onNext(KYIV_AIRPORT)
 
         observer.assertNoErrors()
+
         observer.assertValueCount(3)
         val list = observer.values()[2]
         assertEquals(list.size, 2)

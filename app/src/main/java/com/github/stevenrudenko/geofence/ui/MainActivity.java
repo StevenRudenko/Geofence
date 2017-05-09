@@ -142,6 +142,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     public void onStart() {
         mapView.onStart();
         super.onStart();
+        if (googleMap != null && checkPermissions()) {
+            start();
+        }
     }
 
     private void start() {
@@ -154,31 +157,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         compositeDisposable.add(
                 storage.getGeofenceUpdates()
                         .observeOn(AndroidSchedulers.mainThread())
-                        .subscribe(geofences -> {
-                            googleMap.clear();
-                            geofenceMap.clear();
-
-                            final int strokeColor = ColorUtils.getColor(this, R.color.colorPrimary);
-                            final int fillColor = ColorUtils.getColor(this, R.color.colorPrimaryDim);
-                            for (Geofence geofence : geofences) {
-                                final LocationProvider.Location point = geofence.getPoint();
-                                final LatLng latLng = new LatLng(point.getLat(), point.getLng());
-                                CircleOptions circle = new CircleOptions()
-                                        .center(latLng)
-                                        .radius(geofence.getRadius())
-                                        .fillColor(fillColor)
-                                        .strokeWidth(2f)
-                                        .strokeColor(strokeColor);
-                                MarkerOptions marker = new MarkerOptions()
-                                        .icon(BitmapDescriptorFactory.fromResource(R.drawable.ic_geofence_marker))
-                                        .anchor(0.5f, 0.5f)
-                                        .flat(true)
-                                        .position(latLng);
-                                final Circle c = googleMap.addCircle(circle);
-                                final Marker m = googleMap.addMarker(marker);
-                                geofenceMap.put(m, new MarkerItem(geofence, c));
-                            }
-                        })
+                        .subscribe(this::updateGeofenceMarkers)
         );
         showMyPostions();
     }
@@ -308,6 +287,32 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     public void onDialogCanceled(AlertDialogFragment f) {
         if (toRemove != null) {
             resetMarker(toRemove, false);
+        }
+    }
+
+    private void updateGeofenceMarkers(List<Geofence> geofences) {
+        googleMap.clear();
+        geofenceMap.clear();
+
+        final int strokeColor = ColorUtils.getColor(this, R.color.colorPrimary);
+        final int fillColor = ColorUtils.getColor(this, R.color.colorPrimaryDim);
+        for (Geofence geofence : geofences) {
+            final LocationProvider.Location point = geofence.getPoint();
+            final LatLng latLng = new LatLng(point.getLat(), point.getLng());
+            CircleOptions circle = new CircleOptions()
+                    .center(latLng)
+                    .radius(geofence.getRadius())
+                    .fillColor(fillColor)
+                    .strokeWidth(2f)
+                    .strokeColor(strokeColor);
+            MarkerOptions marker = new MarkerOptions()
+                    .icon(BitmapDescriptorFactory.fromResource(R.drawable.ic_geofence_marker))
+                    .anchor(0.5f, 0.5f)
+                    .flat(true)
+                    .position(latLng);
+            final Circle c = googleMap.addCircle(circle);
+            final Marker m = googleMap.addMarker(marker);
+            geofenceMap.put(m, new MarkerItem(geofence, c));
         }
     }
 

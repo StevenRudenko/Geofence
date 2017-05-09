@@ -5,7 +5,7 @@ import java.util.List;
 
 import io.reactivex.Observable;
 import io.reactivex.Scheduler;
-import io.reactivex.disposables.Disposable;
+import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.schedulers.Schedulers;
 import io.reactivex.subjects.BehaviorSubject;
 
@@ -25,20 +25,22 @@ public class GeofenceModule {
      * Available geofences collection.
      */
     private final GeofenceStorage storage;
-
-    /**
-     * Inbounds geofence observable.
-     */
-    private BehaviorSubject<ArrayList<Geofence>> inbouncGeofences = BehaviorSubject.create();
     /**
      * Geofence calculation subscription.
      */
-    private Disposable updatesSubscription;
-
+    private final CompositeDisposable combinedSubscription = new CompositeDisposable();
     /**
      * Sets work on scheduler.
      */
     private final Scheduler workOn;
+    /**
+     * Inbounds geofence observable.
+     */
+    private final BehaviorSubject<ArrayList<Geofence>> inbouncGeofences = BehaviorSubject.create();
+    /**
+     * Check geofences data queue.
+     */
+    private final BehaviorSubject<GeofenceCheck> checkQueue = BehaviorSubject.create();
 
     public GeofenceModule(LocationProvider locationProvider,
                           WifiInfoProvider wifiInfoProvider,
@@ -46,10 +48,12 @@ public class GeofenceModule {
         this(locationProvider, wifiInfoProvider, storage, Schedulers.computation());
     }
 
-    /** For testing purposes. */
+    /**
+     * For testing purposes.
+     */
     protected GeofenceModule(LocationProvider locationProvider,
-                          WifiInfoProvider wifiInfoProvider,
-                          GeofenceStorage storage,
+                             WifiInfoProvider wifiInfoProvider,
+                             GeofenceStorage storage,
                              Scheduler workOn) {
         this.locationProvider = locationProvider;
         this.wifiInfoProvider = wifiInfoProvider;
@@ -58,7 +62,7 @@ public class GeofenceModule {
     }
 
     public Observable<ArrayList<Geofence>> getInboundGeofences() {
-        if (updatesSubscription == null) {
+        if (combinedSubscription.size() == 0) {
             throw new IllegalStateException(GeofenceModule.class.getSimpleName() + " should be started first");
         }
         return inbouncGeofences;
@@ -68,41 +72,39 @@ public class GeofenceModule {
         locationProvider.start();
         wifiInfoProvider.start();
 
-        updatesSubscription = Observable.combineLatest(
+        Observable.combineLatest(
                 locationProvider.getLocationUpdates(),
                 wifiInfoProvider.getWiFiInfoUpdates(),
                 GeofenceCheck::new)
                 .subscribeOn(workOn)
-                .map(geofenceCheck -> {
-                    final List<Geofence> geofences = storage.getGeofences();
-                    final ArrayList<GeofenceResult> result = new ArrayList<>();
-                    for (Geofence geofence : geofences) {
-                        final boolean inbound = GeofenceUtils.isInsideGeofence(
-                                geofence, geofenceCheck.location, geofenceCheck.wifiInfo.getSsid());
-                        result.add(new GeofenceResult(geofence, inbound));
-                    }
-                    return result;
-                })
-                .doOnNext(results -> {
-                    final ArrayList<Geofence> list = new ArrayList<>();
-                    for (GeofenceResult result : results) {
-                        if (result.inbound) {
-                            list.add(result.geofence);
-                        }
-                    }
-                    inbouncGeofences.onNext(list);
-                })
-                .subscribe();
+                .subscribe(checkQueue);
+
+        combinedSubscription.add(checkQueue.map(this::check).subscribe());
+        combinedSubscription.add(
+                storage.getGeofenceUpdates().subscribe(geofences -> check(checkQueue.getValue()))
+        );
     }
 
     public void stop() {
-        if (updatesSubscription != null) {
-            updatesSubscription.dispose();
-            updatesSubscription = null;
+        if (combinedSubscription != null) {
+            combinedSubscription.clear();
         }
-
         locationProvider.stop();
         wifiInfoProvider.stop();
+    }
+
+    private ArrayList<Geofence> check(GeofenceCheck check) {
+        final List<Geofence> geofences = storage.getGeofences();
+        final ArrayList<Geofence> result = new ArrayList<>();
+        for (Geofence geofence : geofences) {
+            final boolean inbound = GeofenceUtils.isInsideGeofence(
+                    geofence, check.location, check.wifiInfo.getSsid());
+            if (inbound) {
+                result.add(geofence);
+            }
+        }
+        inbouncGeofences.onNext(result);
+        return result;
     }
 
     /**

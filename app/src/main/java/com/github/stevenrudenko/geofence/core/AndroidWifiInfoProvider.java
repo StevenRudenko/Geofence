@@ -60,7 +60,7 @@ public class AndroidWifiInfoProvider implements WifiInfoProvider {
             WifiManager wifiManager = (WifiManager) context.getApplicationContext().getSystemService(
                     Context.WIFI_SERVICE);
             android.net.wifi.WifiInfo info = wifiManager.getConnectionInfo();
-            String ssid  = info.getSSID();
+            String ssid  = info.getSSID().replaceAll("\"", "");
             return new WifiInfo(true, ssid);
         } else {
             return new WifiInfo(false);
