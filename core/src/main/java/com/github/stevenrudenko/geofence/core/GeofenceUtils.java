@@ -24,7 +24,6 @@ public final class GeofenceUtils {
 
     public static boolean isInsideGeofence(Geofence geofence,
                                            LocationProvider.Location point, String ssid) {
-        System.out.println("Location: " + point.getLat() + ", " + point.getLng() + " SSID: " + ssid);
         // device is still connected to geofence Wifi hotspot
         if (ssid != null && geofence.getSsidPattern().matcher(ssid).matches()) {
             return true;

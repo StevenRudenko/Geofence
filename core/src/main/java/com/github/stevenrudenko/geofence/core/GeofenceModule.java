@@ -94,6 +94,10 @@ public class GeofenceModule {
     }
 
     private ArrayList<Geofence> check(GeofenceCheck check) {
+        // we didn't have enough info to determine geofence inbounds
+        if (check == null) {
+            return new ArrayList<>(0);
+        }
         final List<Geofence> geofences = storage.getGeofences();
         final ArrayList<Geofence> result = new ArrayList<>();
         for (Geofence geofence : geofences) {

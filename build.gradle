@@ -52,11 +52,16 @@ ext {
             // Butterknife
             butterknife         : 'com.jakewharton:butterknife:8.4.0',
             butterknifeCompiler : 'com.jakewharton:butterknife-compiler:8.4.0',
+
             // Rx
             rxjava              : "io.reactivex.rxjava2:rxjava:2.1.0",
             rxandroid           : "io.reactivex.rxjava2:rxandroid:2.0.1",
             rxbinding           : "$rxbindingGroup:rxbinding:$rxbindingLibsVersion",
             rxbindingDesign     : "$rxbindingGroup:rxbinding-design:$rxbindingLibsVersion",
+            rxinterpret         : "com.github.akarnokd:rxjava2-interop:0.10.0",
+
+            // Square
+            sqlbrite            : "com.squareup.sqlbrite:sqlbrite:1.1.1",
 
             // Testing
             junit               : 'junit:junit:4.12',

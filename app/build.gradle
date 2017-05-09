@@ -46,6 +46,10 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
+
+    packagingOptions {
+        exclude 'META-INF/rxjava.properties'
+    }
 }
 
 dependencies {
@@ -58,13 +62,17 @@ dependencies {
         exclude excl.supportAnnotations
         exclude excl.supportV4
     }
-    // Google Maps view
-    compile dep.googleLocation
     // Google fused-location
+    compile dep.googleLocation
+    // Google Maps view
     compile dep.googleMaps
 
     // RxAndroid
+    compile dep.rxinterpret
     compile dep.rxbinding
+
+    // Storage
+    compile dep.sqlbrite
 
     // Testing
     testCompile dep.junit

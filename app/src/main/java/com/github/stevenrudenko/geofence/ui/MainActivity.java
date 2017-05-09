@@ -4,6 +4,7 @@ import android.Manifest;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
@@ -15,8 +16,9 @@ import com.github.stevenrudenko.geofence.core.AndroidLocationProvider;
 import com.github.stevenrudenko.geofence.core.AndroidWifiInfoProvider;
 import com.github.stevenrudenko.geofence.core.Geofence;
 import com.github.stevenrudenko.geofence.core.GeofenceModule;
+import com.github.stevenrudenko.geofence.core.GeofenceStorage;
 import com.github.stevenrudenko.geofence.core.LocationProvider;
-import com.github.stevenrudenko.geofence.core.MemoryGeofenceStorage;
+import com.github.stevenrudenko.geofence.core.SqliteGeofenceStorage;
 import com.github.stevenrudenko.geofence.core.WifiInfoProvider;
 import com.github.stevenrudenko.geofence.ui.dialog.AlertDialogFragment;
 import com.github.stevenrudenko.geofence.utils.ColorUtils;
@@ -73,6 +75,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     /** Default my position zoom level. */
     private static final int DEFAULT_MY_POSITION_ZOOM_LEVEL = 14;
 
+    /** State to restore map point. */
+    private static final String STATE_MAP_POSITION = "state:position";
+    /** State to restore map zoom level. */
+    private static final String STATE_MAP_ZOOM_LEVEL = "state:zoom";
+
     /**
      * Map view.
      */
@@ -94,16 +101,28 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private CompositeDisposable compositeDisposable = new CompositeDisposable();
 
     /** Geofence storage. */
-    private MemoryGeofenceStorage storage;
+    private GeofenceStorage storage;
     /** Geofence marker map. */
     private Map<Marker, MarkerItem> geofenceMap = new HashMap<>();
     /** Geofence marker used to be removed. */
     private Marker toRemove = null;
 
+    /** Map position to restore. */
+    @Nullable
+    private LatLng restorePosition;
+    /** Zoom level to restore. */
+    private float restoreZoom;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        if (savedInstanceState != null) {
+            restorePosition = savedInstanceState.getParcelable(STATE_MAP_POSITION);
+            restoreZoom = savedInstanceState.getFloat(STATE_MAP_ZOOM_LEVEL);
+        }
+
         final Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
@@ -113,10 +132,17 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         locationProvider = new AndroidLocationProvider(this);
         final WifiInfoProvider wifiInfoProvider = new AndroidWifiInfoProvider(this);
-        storage = new MemoryGeofenceStorage();
+        storage = new SqliteGeofenceStorage(this);
         geofenceModule = new GeofenceModule(locationProvider, wifiInfoProvider, storage);
 
         findViewById(R.id.fab).setOnClickListener(view -> showMyPostions());
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putParcelable(STATE_MAP_POSITION, googleMap.getCameraPosition().target);
+        outState.putFloat(STATE_MAP_ZOOM_LEVEL, googleMap.getCameraPosition().zoom);
     }
 
     @Override
@@ -159,7 +185,13 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                         .observeOn(AndroidSchedulers.mainThread())
                         .subscribe(this::updateGeofenceMarkers)
         );
-        showMyPostions();
+        if (restorePosition == null) {
+            showMyPostions();
+        } else {
+            CameraUpdate cameraUpdate = CameraUpdateFactory.newLatLngZoom(
+                    restorePosition, restoreZoom);
+            googleMap.moveCamera(cameraUpdate);
+        }
     }
 
     @Override

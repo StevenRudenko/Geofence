@@ -1,5 +1,8 @@
 package com.github.stevenrudenko.geofence.core;
 
+import com.github.stevenrudenko.geofence.core.Geofence;
+import com.github.stevenrudenko.geofence.core.GeofenceStorage;
+
 import java.util.ArrayList;
 import java.util.List;
 
