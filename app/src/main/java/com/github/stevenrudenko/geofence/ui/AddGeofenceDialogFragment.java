@@ -6,7 +6,6 @@ import android.content.DialogInterface;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AlertDialog;
-import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.EditText;
@@ -88,7 +87,7 @@ public class AddGeofenceDialogFragment extends BaseDialogFragment<AddGeofenceDia
         super.onStart();
         inputValidationDisposable = Observable.combineLatest(
                 RxTextView.textChanges(radiusInput), RxTextView.textChanges(ssidInput),
-                (radius, ssid) -> RADIUS_PATTERN.matcher(radius).matches() && !TextUtils.isEmpty(ssid))
+                (radius, ssid) -> RADIUS_PATTERN.matcher(radius).matches())
                 .subscribe(correct -> {
                     final AlertDialog dialog = (AlertDialog) getDialog();
                     dialog.getButton(DialogInterface.BUTTON_POSITIVE).setEnabled(correct);

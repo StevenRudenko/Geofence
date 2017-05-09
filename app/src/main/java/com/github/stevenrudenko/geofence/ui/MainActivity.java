@@ -5,11 +5,12 @@ import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
+import android.view.View;
 
 import com.github.stevenrudenko.geofence.R;
 import com.github.stevenrudenko.geofence.core.AndroidLocationProvider;
@@ -73,13 +74,18 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private static final String DIALOG_REMOVE_GEOFENCE_TAG = "dialog:remove-geofence";
 
     /** Default my position zoom level. */
-    private static final int DEFAULT_MY_POSITION_ZOOM_LEVEL = 14;
+    private static final int DEFAULT_MY_POSITION_ZOOM_LEVEL = 16;
 
     /** State to restore map point. */
     private static final String STATE_MAP_POSITION = "state:position";
     /** State to restore map zoom level. */
     private static final String STATE_MAP_ZOOM_LEVEL = "state:zoom";
 
+    /** Root layout. */
+    private View root;
+    /** Shows count of geofences inbound. */
+    @Nullable
+    private Snackbar geofenceSnaclbar;
     /**
      * Map view.
      */
@@ -126,6 +132,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         final Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
+        root = findViewById(R.id.root_layout);
+
         mapView = (MapView) findViewById(R.id.map);
         mapView.onCreate(savedInstanceState);
         mapView.getMapAsync(this);
@@ -141,8 +149,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
-        outState.putParcelable(STATE_MAP_POSITION, googleMap.getCameraPosition().target);
-        outState.putFloat(STATE_MAP_ZOOM_LEVEL, googleMap.getCameraPosition().zoom);
+        if (googleMap != null) {
+            outState.putParcelable(STATE_MAP_POSITION, googleMap.getCameraPosition().target);
+            outState.putFloat(STATE_MAP_ZOOM_LEVEL, googleMap.getCameraPosition().zoom);
+        }
     }
 
     @Override
@@ -177,7 +187,17 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         geofenceModule.start();
         compositeDisposable.add(
                 geofenceModule.getInboundGeofences().subscribe(geofences -> {
-                    Log.i(TAG, "Geofences: " + geofences.size());
+                    final int count = geofences.size();
+                    if (count == 0) {
+                        if (geofenceSnaclbar != null) {
+                            geofenceSnaclbar.dismiss();
+                        }
+                    } else {
+                        final String text = getResources().getQuantityString(
+                                R.plurals.geofences_inbound, count, count);
+                        geofenceSnaclbar = Snackbar.make(root, text, Snackbar.LENGTH_INDEFINITE);
+                        geofenceSnaclbar.show();
+                    }
                 })
         );
         compositeDisposable.add(

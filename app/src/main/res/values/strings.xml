@@ -14,4 +14,16 @@
     <string name="geofence_radius">Geofence radius</string>
     <string name="geofence_hotspot_name">Geofence hotspot name</string>
 
+    <string name="geofences_inbound_zero">Not in geofence</string>
+    <string name="geofences_inbound_one">One geofence inbound</string>
+    <string name="geofences_inbound_two">Two geofences inbound</string>
+    <string name="geofences_inbound_other">%d geofences inbound</string>
+
+    <plurals name="geofences_inbound">
+        <item quantity="zero">@string/geofences_inbound_zero</item>
+        <item quantity="one">@string/geofences_inbound_one</item>
+        <item quantity="two">@string/geofences_inbound_two</item>
+        <item quantity="other">@string/geofences_inbound_other</item>
+    </plurals>
+
 </resources>
