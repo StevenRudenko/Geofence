@@ -18,17 +18,26 @@ import com.github.stevenrudenko.geofence.core.GeofenceModule;
 import com.github.stevenrudenko.geofence.core.LocationProvider;
 import com.github.stevenrudenko.geofence.core.MemoryGeofenceStorage;
 import com.github.stevenrudenko.geofence.core.WifiInfoProvider;
+import com.github.stevenrudenko.geofence.ui.dialog.AlertDialogFragment;
+import com.github.stevenrudenko.geofence.utils.ColorUtils;
 import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
+import com.google.android.gms.maps.model.Circle;
+import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
+import com.google.android.gms.maps.model.MarkerOptions;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
+import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.disposables.Disposable;
 
@@ -37,7 +46,8 @@ import io.reactivex.disposables.Disposable;
  */
 public class MainActivity extends AppCompatActivity implements OnMapReadyCallback,
         GoogleMap.OnMapLongClickListener, GoogleMap.OnMarkerClickListener,
-        AddGeofenceDialogFragment.AddGeofenceDialogListener {
+        AddGeofenceDialogFragment.AddGeofenceDialogListener,
+        AlertDialogFragment.OnAlertDialogListener {
     /**
      * Log tag.
      */
@@ -57,6 +67,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     /** Add geofence dialog tag. */
     private static final String DIALOG_ADD_GEOFENCE_TAG = "dialog:add-geofence";
+    /** Remove geofence dialog tag. */
+    private static final String DIALOG_REMOVE_GEOFENCE_TAG = "dialog:remove-geofence";
 
     /** Default my position zoom level. */
     private static final int DEFAULT_MY_POSITION_ZOOM_LEVEL = 14;
@@ -81,7 +93,12 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
      */
     private CompositeDisposable compositeDisposable = new CompositeDisposable();
 
+    /** Geofence storage. */
     private MemoryGeofenceStorage storage;
+    /** Geofence marker map. */
+    private Map<Marker, MarkerItem> geofenceMap = new HashMap<>();
+    /** Geofence marker used to be removed. */
+    private Marker toRemove = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -100,7 +117,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         geofenceModule = new GeofenceModule(locationProvider, wifiInfoProvider, storage);
 
         findViewById(R.id.fab).setOnClickListener(view -> showMyPostions());
-
     }
 
     @Override
@@ -134,6 +150,35 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 geofenceModule.getInboundGeofences().subscribe(geofences -> {
                     Log.i(TAG, "Geofences: " + geofences.size());
                 })
+        );
+        compositeDisposable.add(
+                storage.getGeofenceUpdates()
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe(geofences -> {
+                            googleMap.clear();
+                            geofenceMap.clear();
+
+                            final int strokeColor = ColorUtils.getColor(this, R.color.colorPrimary);
+                            final int fillColor = ColorUtils.getColor(this, R.color.colorPrimaryDim);
+                            for (Geofence geofence : geofences) {
+                                final LocationProvider.Location point = geofence.getPoint();
+                                final LatLng latLng = new LatLng(point.getLat(), point.getLng());
+                                CircleOptions circle = new CircleOptions()
+                                        .center(latLng)
+                                        .radius(geofence.getRadius())
+                                        .fillColor(fillColor)
+                                        .strokeWidth(2f)
+                                        .strokeColor(strokeColor);
+                                MarkerOptions marker = new MarkerOptions()
+                                        .icon(BitmapDescriptorFactory.fromResource(R.drawable.ic_geofence_marker))
+                                        .anchor(0.5f, 0.5f)
+                                        .flat(true)
+                                        .position(latLng);
+                                final Circle c = googleMap.addCircle(circle);
+                                final Marker m = googleMap.addMarker(marker);
+                                geofenceMap.put(m, new MarkerItem(geofence, c));
+                            }
+                        })
         );
         showMyPostions();
     }
@@ -216,9 +261,18 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     @Override
     public boolean onMarkerClick(Marker marker) {
-        return false;
-    }
+        toRemove = marker;
+        resetMarker(marker, true);
 
+        AlertDialogFragment.newInstance(
+                null,
+                getText(R.string.remove_geofence_message),
+                getText(R.string.ok),
+                getText(R.string.cancel),
+                true)
+                .show(getSupportFragmentManager(), DIALOG_REMOVE_GEOFENCE_TAG);
+        return true;
+    }
 
     private Disposable showMyPostions() {
         return locationProvider.getLocationUpdates()
@@ -235,4 +289,50 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     public void addGeofence(Geofence geofence) {
         storage.add(geofence);
     }
+
+    @Override
+    public void onDialogButtonClick(AlertDialogFragment f, int which) {
+        if (toRemove == null) {
+            return;
+        }
+        if (which == AlertDialogFragment.BUTTON_POSITIVE) {
+            final MarkerItem item = geofenceMap.get(toRemove);
+            final Geofence geofence = item.geofence;
+            storage.remove(geofence);
+        } else {
+            resetMarker(toRemove, false);
+        }
+    }
+
+    @Override
+    public void onDialogCanceled(AlertDialogFragment f) {
+        if (toRemove != null) {
+            resetMarker(toRemove, false);
+        }
+    }
+
+    private void resetMarker(Marker marker, boolean selected) {
+        marker.setIcon(BitmapDescriptorFactory.fromResource(
+                selected ? R.drawable.ic_geofence_marker_selected : R.drawable.ic_geofence_marker));
+        final MarkerItem item = geofenceMap.get(toRemove);
+        final Circle circle = item.circle;
+        final int strokeColor = ColorUtils.getColor(this,
+                selected ? R.color.colorAccent : R.color.colorPrimary);
+        final int fillColor = ColorUtils.getColor(this,
+                selected ? R.color.colorAccentDim : R.color.colorPrimaryDim);
+        circle.setStrokeColor(strokeColor);
+        circle.setFillColor(fillColor);
+    }
+
+    /** Used to link geofence and circle by marker. */
+    private static class MarkerItem {
+        final Geofence geofence;
+        final Circle circle;
+
+        private MarkerItem(Geofence geofence, Circle circle) {
+            this.geofence = geofence;
+            this.circle = circle;
+        }
+    }
+
 }

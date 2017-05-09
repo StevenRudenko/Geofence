@@ -7,11 +7,11 @@ import com.nhaarman.mockito_kotlin.verify
 import io.reactivex.observers.TestObserver
 import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.PublishSubject
-import junit.framework.Assert.assertEquals
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import java.util.ArrayList
-import kotlin.test.assertTrue
 
 /** Tests for [GeofenceModule].  */
 class GeofenceModuleTest {
@@ -124,6 +124,26 @@ class GeofenceModuleTest {
         assertTrue(list.contains(vyshneveGeofence))
     }
 
+    @Test
+    fun getInboundGeofences_path_to_geofence() {
+        val observer = TestObserver<ArrayList<Geofence>>()
+        target.start()
+        target.inboundGeofences
+                .observeOn(Schedulers.trampoline())
+                .subscribe(observer)
+        // send init locations
+        wifiInfos.onNext(WifiInfoProvider.WifiInfo(false))
+        locations.onNext(KHARKIV)
+        locations.onNext(KBP_AIRPORT)
+        locations.onNext(KYIV_AIRPORT)
+
+        observer.assertNoErrors()
+        observer.assertValueCount(3)
+        val list = observer.values()[2]
+        assertEquals(list.size, 2)
+        assertTrue(list.contains(kyivGeofence))
+        assertTrue(list.contains(vyshneveGeofence))
+    }
 
     @Test
     fun start() {

@@ -5,7 +5,6 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
-import android.support.v4.app.DialogFragment;
 import android.support.v7.app.AlertDialog;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
@@ -15,6 +14,7 @@ import android.widget.EditText;
 import com.github.stevenrudenko.geofence.R;
 import com.github.stevenrudenko.geofence.core.Geofence;
 import com.github.stevenrudenko.geofence.core.LocationProvider;
+import com.github.stevenrudenko.geofence.ui.dialog.BaseDialogFragment;
 import com.jakewharton.rxbinding2.widget.RxTextView;
 
 import java.util.regex.Pattern;
@@ -23,7 +23,7 @@ import io.reactivex.Observable;
 import io.reactivex.disposables.Disposable;
 
 /** Add geofence dialog fragment. */
-public class AddGeofenceDialogFragment extends DialogFragment {
+public class AddGeofenceDialogFragment extends BaseDialogFragment<AddGeofenceDialogFragment.AddGeofenceDialogListener> {
     /** Radius pattern. */
     private static final Pattern RADIUS_PATTERN = Pattern.compile("\\d+");
 
@@ -53,17 +53,8 @@ public class AddGeofenceDialogFragment extends DialogFragment {
     }
 
     @Override
-    public void onAttach(Context context) {
-        super.onAttach(context);
-        if (getParentFragment() != null
-                && getParentFragment() instanceof AddGeofenceDialogListener) {
-            listener = (AddGeofenceDialogListener) getParentFragment();
-        } else if (getActivity() instanceof AddGeofenceDialogListener) {
-            listener = (AddGeofenceDialogListener) getActivity();
-        } else {
-            throw new IllegalStateException("Dialog parent should inplement "
-                    + AddGeofenceDialogListener.class.getSimpleName());
-        }
+    protected Class<AddGeofenceDialogFragment.AddGeofenceDialogListener> getListenerClass() {
+        return AddGeofenceDialogFragment.AddGeofenceDialogListener.class;
     }
 
     @NonNull
@@ -86,7 +77,7 @@ public class AddGeofenceDialogFragment extends DialogFragment {
                             new LocationProvider.Location(lat, lng);
                     final int radius = Integer.parseInt(radiusInput.getText().toString());
                     final String ssid = ssidInput.getText().toString();
-                    listener.addGeofence(new Geofence(location, radius, ssid));
+                    getListener().addGeofence(new Geofence(location, radius, ssid));
                 })
                 .setNegativeButton(R.string.cancel, null)
                 .create();
