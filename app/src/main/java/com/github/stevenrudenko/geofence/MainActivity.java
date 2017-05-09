@@ -1,28 +1,46 @@
 package com.github.stevenrudenko.geofence;
 
+import android.Manifest;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
+import android.support.v4.content.ContextCompat;
+import android.util.Log;
 
 import com.github.stevenrudenko.geofence.core.AndroidLocationProvider;
 import com.github.stevenrudenko.geofence.core.AndroidWifiInfoProvider;
 import com.github.stevenrudenko.geofence.core.GeofenceModule;
 import com.github.stevenrudenko.geofence.core.LocationProvider;
 import com.github.stevenrudenko.geofence.core.WifiInfoProvider;
-import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.Marker;
 
-import io.reactivex.annotations.NonNull;
+import java.util.ArrayList;
+import java.util.List;
+
 import io.reactivex.disposables.CompositeDisposable;
-import io.reactivex.functions.Consumer;
 
 /**
  * Main acitivity.
  */
-public class MainActivity extends FragmentActivity implements OnMapReadyCallback {
+public class MainActivity extends FragmentActivity implements OnMapReadyCallback,
+        GoogleMap.OnMapLongClickListener, GoogleMap.OnMarkerClickListener {
+    /** Log tag. */
+    private static final String TAG = MainActivity.class.getSimpleName();
+
+    /** Request to get needed permissions. */
+    public static final int REQUEST_PERMISSIONS = 1;
+    /** Required permissions. */
+    private final String[] PERMISSIONS = new String[]{
+            Manifest.permission.ACCESS_COARSE_LOCATION,
+            Manifest.permission.ACCESS_FINE_LOCATION,
+    };
+
     /**
      * Map view.
      */
@@ -63,28 +81,33 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     public void onMapReady(GoogleMap googleMap) {
         this.googleMap = googleMap;
-
-
-        // Add a marker in Sydney and move the camera
-        LatLng sydney = new LatLng(-34, 151);
-        this.googleMap.addMarker(new MarkerOptions().position(sydney).title("Marker in Sydney"));
-        this.googleMap.moveCamera(CameraUpdateFactory.newLatLng(sydney));
+        // setup map view
+        googleMap.getUiSettings().setMyLocationButtonEnabled(true);
+        googleMap.getUiSettings().setZoomGesturesEnabled(true);
+        if (!checkPermissions()) {
+            return;
+        }
+        //noinspection MissingPermission
+        googleMap.setMyLocationEnabled(true);
+        googleMap.setOnMapLongClickListener(this);
+        googleMap.setOnMarkerClickListener(this);
+        // start geo-fence module
+        start();
     }
 
     @Override
     public void onStart() {
         mapView.onStart();
         super.onStart();
+    }
+
+    private void start() {
+        geofenceModule.start();
         compositeDisposable.add(
-                locationProvider.getLocationUpdates().subscribe(location -> {
-                    final LatLng userPosition = new LatLng(location.getLat(), location.getLng());
-                    final MarkerOptions markerOptions = new MarkerOptions()
-                            .position(userPosition);
-                    this.googleMap.addMarker(markerOptions);
-                    this.googleMap.moveCamera(CameraUpdateFactory.newLatLng(userPosition));
+                geofenceModule.getInboundGeofences().subscribe(geofences -> {
+                    Log.i(TAG, "Geofences: " + geofences.size());
                 })
         );
-
     }
 
     @Override
@@ -104,6 +127,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         super.onStop();
         mapView.onStop();
         compositeDisposable.clear();
+        geofenceModule.stop();
     }
 
     @Override
@@ -118,4 +142,47 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         mapView.onLowMemory();
     }
 
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
+                                           @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode != REQUEST_PERMISSIONS) {
+            return;
+        }
+        for (int result : grantResults) {
+            if (result != PackageManager.PERMISSION_GRANTED) {
+                checkPermissions();
+                return;
+            } else {
+                start();
+            }
+        }
+    }
+
+    private boolean checkPermissions() {
+        int result;
+        List<String> listPermissionsNeeded = new ArrayList<>();
+        for (String p : PERMISSIONS) {
+            result = ContextCompat.checkSelfPermission(this, p);
+            if (result != PackageManager.PERMISSION_GRANTED) {
+                listPermissionsNeeded.add(p);
+            }
+        }
+        if (!listPermissionsNeeded.isEmpty()) {
+            ActivityCompat.requestPermissions(this, listPermissionsNeeded.toArray(
+                    new String[listPermissionsNeeded.size()]), REQUEST_PERMISSIONS);
+            return false;
+        }
+        return true;
+    }
+
+    @Override
+    public void onMapLongClick(LatLng latLng) {
+
+    }
+
+    @Override
+    public boolean onMarkerClick(Marker marker) {
+        return false;
+    }
 }
