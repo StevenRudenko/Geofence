@@ -2,7 +2,7 @@ Geofence
 ===================
 
 Geofence detects if device is inside of geofence area.
-Geofence area is defined as a combination of some geographic point, radius, and Wi-Fi network name. Device is considered to be inside of the geofence zone if it’s connected to the specified network or remains geographically in the defined circle or connected to specified hotspot.
+Geofence area is defined as a combination of some geographic point, radius, and Wi-Fi network name. Device is considered to be inside of the geofence zone if it’s connected to the specified network or remains geographically in the defined circle.
 
 ## Project structure
 * [core](core) is Java library. It contains geofence detection module which is self-written solution to meet requirements and have full control on most important part of project (business logic). It partially covered by JUnit tests.
