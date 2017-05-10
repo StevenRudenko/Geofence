@@ -63,7 +63,7 @@ public class AndroidLocationProvider implements LocationProvider, LocationListen
     private void requestLocationUpdates() {
         final LocationRequest request = LocationRequest.create()
                 .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)
-                .setFastestInterval(60000L);
+                .setFastestInterval(5000L);
         onLocationChanged(LocationServices.FusedLocationApi.getLastLocation(googleApiClient));
         LocationServices.FusedLocationApi.requestLocationUpdates(
                 googleApiClient, request, this);
