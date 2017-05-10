@@ -27,8 +27,13 @@ Click on geofence area center to select it to be removed. Confirmation dialog wi
 ## Feature to be implemented in future
 * Play services error handing
 * Handle edge cases with location updates reading (related to Google fuzed-location)
+* Add background work support using service
+* Add settings page to setup location updates intervals
 * Write some more tests
 * Texting should be reviewed and fixed
+
+## Limitations
+Current code base doesn't support release builds as far release keystore hash should be registered at [Developers console](https://console.developers.google.com/) and put into [google_maps_api.xml]([SqliteGeofenceStorage](app/src/release/res/values/google_maps_api.xml) resource file.
 
 ## Features and libraries
 * [Support libraries](https://developer.android.com/topic/libraries/support-library/index.html)
@@ -38,7 +43,6 @@ Click on geofence area center to select it to be removed. Confirmation dialog wi
 * [Mockito](https://github.com/mockito/mockito)
 * [JUnit4](https://github.com/junit-team/junit)
 * [Kotlin](http://kotlinlang.org/)
-
 
 
 ## Screenshots
