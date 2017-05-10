@@ -33,7 +33,7 @@ Click on geofence area center to select it to be removed. Confirmation dialog wi
 * Texting should be reviewed and fixed
 
 ## Limitations
-Current code base doesn't support release builds as far release keystore hash should be registered at [Developers console](https://console.developers.google.com/) and put into [google_maps_api.xml]([SqliteGeofenceStorage](app/src/release/res/values/google_maps_api.xml) resource file.
+Current code base doesn't support release builds as far release keystore hash should be registered at [Developers console](https://console.developers.google.com/) and put into [google_maps_api.xml](app/src/release/res/values/google_maps_api.xml) resource file.
 
 ## Features and libraries
 * [Support libraries](https://developer.android.com/topic/libraries/support-library/index.html)
